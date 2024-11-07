@@ -5,7 +5,11 @@
 #include <PubSubClient.h>
 
 #define SS_PIN 5       
-#define RST_PIN 22     
+#define RST_PIN 22    
+#define RED_LED_PIN 26      // Pin para la luz roja
+#define GREEN_LED_PIN 25    // Pin para la luz verde
+#define BUZZER_PIN 32
+
 
 const char* ssid     = "AEG-IKASLE";
 const char* password = "Ea25dneAEG";
@@ -117,12 +121,12 @@ unsigned long waitingStartTime = 0;
 String uidStr = "";
 
 void reconnect() {
+  // Conectar a WiFi y MQTT
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Reconnecting to WiFi...");
     WiFi.begin(ssid, password);
     delay(5000);
   }
-
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP32EIAS")) {
@@ -151,11 +155,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (strcmp(topic, "EIASOpenDoor") == 0) {
     Serial.println("Access granted. Opening door...");
+    digitalWrite(GREEN_LED_PIN, HIGH); // Enciende la luz verde
+    digitalWrite(RED_LED_PIN, LOW);    // Apaga la luz roja
+    tone(BUZZER_PIN, 1000, 500);       // Tono alto (1 kHz) durante 0.5 segundos para acceso permitido
     delay(3000);
-    Serial.println("The door is open");
+    digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde después de 3 segundos
     client.publish("EIASdoorOpened", uidStr.c_str());
   } else if (strcmp(topic, "EIASOpenDoorDenied") == 0) {
     Serial.println("Access denied. Showing message or alert...");
+    digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde
+    digitalWrite(RED_LED_PIN, HIGH);   // Enciende la luz roja
+    tone(BUZZER_PIN, 300, 500);        // Tono bajo (300 Hz) durante 0.5 segundos para acceso denegado
+    delay(3000);
+    digitalWrite(RED_LED_PIN, LOW);    // Apaga la luz roja después de 3 segundos
   }
 
   waitingForAccessResponse = false;
@@ -164,6 +176,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void setup() {
   Serial.begin(115200);
   Serial.println(F("Initialize System"));
+
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(RED_LED_PIN, LOW);    // Apaga las luces al iniciar
+  digitalWrite(GREEN_LED_PIN, LOW);
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -187,7 +205,6 @@ void setup() {
   ESP_EIAS.setCertificate(certificate);
   ESP_EIAS.setPrivateKey(private_key);
 
-
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
@@ -195,6 +212,7 @@ void setup() {
 }
 
 void loop() {
+  readRFID();
   if (!client.connected()) {
     reconnect();
   }
@@ -204,8 +222,6 @@ void loop() {
     Serial.println("Waiting time exceeded. Restarting card reading...");
     waitingForAccessResponse = false;
   }
-
-  readRFID();
 }
 
 void readRFID(void) {
