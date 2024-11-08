@@ -76,7 +76,7 @@ const char* certificate = \
 "7l0mtGsJC/x5xU+Fdi/opNUUxU56m3sOiHaTXNfBhcsz7hOa1loj0HZ+DbOg903G\n" \
 "7pN7s9+E15BjbKr46C2pvA3fZ5EZbctD9D1sxmPhmHf5sVA+6DYlEebAlu6+WHVB\n" \
 "a6NWNoZzKNwySX4WA0mL5LSM2H6+TdKDKJTPrASYhnmUAHm39jWGbHoJojF7QSXb\n" \
-"wwe683aPGWv/eNSN7G3b1pJQVDFXGC1PznNf6bGfoiBfXh9Servo servoMotor;NMv+DPiGSYdYuL0Ur\n" \
+"wwe683aPGWv/eNSN7G3b1pJQVDFXGC1PznNf6bGfoiBfXh9NMv+DPiGSYdYuL0Ur\n" \
 "hrCXGIZ0UVN+BpB9uMSrVSXk9woV7O5FRjG3uOXXeDna/KGxmbUlngQGudERMbyu\n" \
 "gZEglMLobWqi9AiXDq5mQTGBGlfvhxdj1acBVHN9JOa+gxP57792wOnanGov2np8\n" \
 "85WwrLCjIAPAhHbWTKbjNBrXsEWwE9KlhDL7xq8WHAfSa1iPB7IGeXq+JVHoJxS7\n" \
