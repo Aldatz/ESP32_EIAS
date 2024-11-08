@@ -1,20 +1,23 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <WiFi.h>
-#include <WiFiClientSecure.h>  // Incluye esta biblioteca para conexión segura
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
+#include <ESP32Servo.h>  // Librería para controlar el servo en ESP32
 
 #define SS_PIN 5       
 #define RST_PIN 22    
 #define RED_LED_PIN 26      // Pin para la luz roja
 #define GREEN_LED_PIN 25    // Pin para la luz verde
 #define BUZZER_PIN 32
+#define SERVO_PIN 27        // Pin para el servo
 
-
-const char* ssid     = "AEG-IKASLE";
+const char* ssid = "AEG-IKASLE";
 const char* password = "Ea25dneAEG";
 const char* mqttServer = "10.80.128.2";
 const int mqttPort = 8883;
+
+Servo servoMotor;
 
 const char* certificate_request = \
 "-----BEGIN CERTIFICATE-----\n" \
@@ -73,7 +76,7 @@ const char* certificate = \
 "7l0mtGsJC/x5xU+Fdi/opNUUxU56m3sOiHaTXNfBhcsz7hOa1loj0HZ+DbOg903G\n" \
 "7pN7s9+E15BjbKr46C2pvA3fZ5EZbctD9D1sxmPhmHf5sVA+6DYlEebAlu6+WHVB\n" \
 "a6NWNoZzKNwySX4WA0mL5LSM2H6+TdKDKJTPrASYhnmUAHm39jWGbHoJojF7QSXb\n" \
-"wwe683aPGWv/eNSN7G3b1pJQVDFXGC1PznNf6bGfoiBfXh9NMv+DPiGSYdYuL0Ur\n" \
+"wwe683aPGWv/eNSN7G3b1pJQVDFXGC1PznNf6bGfoiBfXh9Servo servoMotor;NMv+DPiGSYdYuL0Ur\n" \
 "hrCXGIZ0UVN+BpB9uMSrVSXk9woV7O5FRjG3uOXXeDna/KGxmbUlngQGudERMbyu\n" \
 "gZEglMLobWqi9AiXDq5mQTGBGlfvhxdj1acBVHN9JOa+gxP57792wOnanGov2np8\n" \
 "85WwrLCjIAPAhHbWTKbjNBrXsEWwE9KlhDL7xq8WHAfSa1iPB7IGeXq+JVHoJxS7\n" \
@@ -158,16 +161,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
     digitalWrite(GREEN_LED_PIN, HIGH); // Enciende la luz verde
     digitalWrite(RED_LED_PIN, LOW);    // Apaga la luz roja
     tone(BUZZER_PIN, 1000, 500);       // Tono alto (1 kHz) durante 0.5 segundos para acceso permitido
-    delay(3000);
-    digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde después de 3 segundos
+    servoMotor.attach(SERVO_PIN);      // Activa el control del servo
+    servoMotor.write(180);             // Gira el servo a 180 grados para abrir la puerta
+    delay(2000);                       // Espera 2 segundos con la puerta abierta
+    servoMotor.detach();
+
+    digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde después de abrir
     client.publish("EIASdoorOpened", uidStr.c_str());
   } else if (strcmp(topic, "EIASOpenDoorDenied") == 0) {
     Serial.println("Access denied. Showing message or alert...");
     digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde
     digitalWrite(RED_LED_PIN, HIGH);   // Enciende la luz roja
-    tone(BUZZER_PIN, 300, 500);        // Tono bajo (300 Hz) durante 0.5 segundos para acceso denegado
-    delay(3000);
-    digitalWrite(RED_LED_PIN, LOW);    // Apaga la luz roja después de 3 segundos
+    tone(BUZZER_PIN, 500, 500);        // Tono bajo (500 Hz) durante 0.5 segundos para acceso denegado
+    delay(1000);
+    digitalWrite(RED_LED_PIN, LOW);    // Apaga la luz roja después de mostrar el error
+  }
+
+  if (strcmp(topic, "EIASAcolyteInside") == 0) {
+    Serial.println("Mensaje recibido en EIASAcolyteInside. Cerrando la puerta.");
+    servoMotor.attach(SERVO_PIN);      // Activa el control del servo
+    servoMotor.write(0);             // Gira el servo a 180 grados para abrir la puerta
+    delay(2000);                       // Espera 2 segundos con la puerta abierta
+    servoMotor.detach();
   }
 
   waitingForAccessResponse = false;
@@ -182,6 +197,11 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(RED_LED_PIN, LOW);    // Apaga las luces al iniciar
   digitalWrite(GREEN_LED_PIN, LOW);
+
+  servoMotor.attach(SERVO_PIN, 1000, 2000);  // Ajuste del rango de pulsos entre 1000 y 2000 microsegundos
+  servoMotor.write(0);
+  delay(1000);
+  servoMotor.detach();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
