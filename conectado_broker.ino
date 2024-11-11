@@ -136,6 +136,7 @@ void reconnect() {
       Serial.println("connected");
       client.subscribe("EIASOpenDoor");
       client.subscribe("EIASOpenDoorDenied");
+      client.subscribe("EIASAcolyteInside");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -163,8 +164,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     tone(BUZZER_PIN, 1000, 500);       // Tono alto (1 kHz) durante 0.5 segundos para acceso permitido
     servoMotor.attach(SERVO_PIN);      // Activa el control del servo
     servoMotor.write(180);             // Gira el servo a 180 grados para abrir la puerta
-    delay(2000);                       // Espera 2 segundos con la puerta abierta
-    servoMotor.detach();
+    delay(4000);                       // Espera 2 segundos con la puerta abierta
 
     digitalWrite(GREEN_LED_PIN, LOW);  // Apaga la luz verde después de abrir
     client.publish("EIASdoorOpened", uidStr.c_str());
@@ -180,7 +180,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, "EIASAcolyteInside") == 0) {
     Serial.println("Mensaje recibido en EIASAcolyteInside. Cerrando la puerta.");
     servoMotor.attach(SERVO_PIN);      // Activa el control del servo
-    servoMotor.write(0);             // Gira el servo a 180 grados para abrir la puerta
+    servoMotor.write(55);             // Gira el servo a 180 grados para abrir la puerta
     delay(2000);                       // Espera 2 segundos con la puerta abierta
     servoMotor.detach();
   }
@@ -199,7 +199,7 @@ void setup() {
   digitalWrite(GREEN_LED_PIN, LOW);
 
   servoMotor.attach(SERVO_PIN, 1000, 2000);  // Ajuste del rango de pulsos entre 1000 y 2000 microsegundos
-  servoMotor.write(0);
+  servoMotor.write(20);
   delay(1000);
   servoMotor.detach();
 
